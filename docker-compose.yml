@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: youtube_clone_redis
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: youtube_clone_vector_db
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+volumes:
+  qdrant_storage:

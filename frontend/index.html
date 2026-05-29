@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal Video Semantic Analytics Platform</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video-js.min.css" rel="stylesheet" />
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .instagram-gradient-text {
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .instagram-gradient-bg {
+            background: linear-gradient(135deg, #2563eb, #7c3aed, #db2777);
+        }
+        .instagram-gradient-border {
+            position: relative;
+        }
+        .instagram-gradient-border::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 1rem;
+            padding: 1.5px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #7c3aed;
+        }
+    </style>
+</head>
+<body class="bg-[#030303] text-zinc-100 min-h-screen selection:bg-purple-500/30 selection:text-purple-200">
+
+    <nav class="sticky top-0 bg-black/60 backdrop-blur-xl border-b border-zinc-900 z-50 px-8 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3 cursor-pointer group" onclick="loadHomepageFeed()">
+            <div class="instagram-gradient-bg p-2.5 rounded-xl shadow-[0_0_20px_rgba(124,58,237,0.4)] group-hover:scale-105 transition duration-300">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <span class="font-extrabold text-2xl tracking-tight text-white group-hover:opacity-90 transition">
+                AI<span class="instagram-gradient-text">Stream</span>
+            </span>
+        </div>
+        
+        <div class="w-1/2 flex max-w-xl bg-zinc-900/50 rounded-2xl border border-zinc-800/80 overflow-hidden focus-within:border-purple-500/50 shadow-inner transition duration-300 backdrop-blur-md">
+            <input type="text" id="globalSearchInput" placeholder="Search library using title, tags, or visual concepts..." 
+                   class="w-full bg-transparent px-5 py-3 text-sm text-zinc-100 outline-none placeholder-zinc-500">
+            <button id="globalSearchButton" onclick="executeGlobalPlatformSearch()" class="instagram-gradient-bg px-6 text-sm font-semibold transition text-white hover:opacity-90 active:scale-95 duration-200">
+                Search Feed
+            </button>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <button onclick="toggleUploadStudio()" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition flex items-center space-x-2">
+                <span class="text-base text-purple-400 font-normal">+</span>
+                <span>Creator Studio</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="p-8 max-w-7xl mx-auto space-y-12">
+        
+        <div id="studioSection" class="hidden bg-zinc-950 rounded-2xl border border-zinc-900 shadow-2xl p-6 transition duration-300 animate-slideDown max-w-3xl mx-auto">
+            <div class="flex items-center justify-between border-b border-zinc-900 pb-4 mb-6">
+                <div>
+                    <h3 class="text-lg font-bold tracking-tight text-zinc-100">AI Ingestion Pipeline</h3>
+                    <p class="text-xs text-zinc-500 mt-0.5">Upload raw media streams to run real-time automated visual frame vector parsing.</p>
+                </div>
+                <button onclick="toggleUploadStudio()" class="text-zinc-500 hover:text-zinc-300 text-sm font-bold px-2">✕</button>
+            </div>
+            
+            <form id="uploadForm" onsubmit="executeVideoUpload(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">Video Title *</label>
+                        <input type="text" id="uploadTitle" required placeholder="e.g., Game of Thrones Scene" class="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-100 outline-none focus:border-purple-500/50 transition">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">Tags (Comma Separated)</label>
+                        <input type="text" id="uploadTags" placeholder="e.g., action, fantasy, dragon" class="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-100 outline-none focus:border-purple-500/50 transition">
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">Description</label>
+                    <textarea id="uploadDescription" rows="2" placeholder="Provide contextual metadata notes here..." class="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-100 outline-none focus:border-purple-500/50 transition resize-none"></textarea>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">Select Media Track *</label>
+                    <input type="file" id="uploadFile" required accept=".mp4,.mkv,.avi" class="w-full bg-zinc-900/30 border border-dashed border-zinc-800 rounded-xl px-4 py-4 text-xs text-zinc-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-500 file:cursor-pointer cursor-pointer transition">
+                </div>
+                <button type="submit" id="uploadSubmitButton" class="w-full instagram-gradient-bg text-white py-3 rounded-xl text-xs font-bold tracking-wide shadow-lg hover:opacity-90 active:scale-[0.99] transition duration-150">
+                    Deploy to Processing Cluster
+                </button>
+            </form>
+        </div>
+        
+        <div id="theaterSection" class="hidden bg-zinc-950 rounded-2xl border border-zinc-900 shadow-[0_24px_70px_rgba(0,0,0,0.7)] p-6 transition duration-500">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="instagram-gradient-border p-[1px] rounded-2xl overflow-hidden bg-zinc-900 shadow-[0_0_40px_rgba(59,130,246,0.15)]">
+                        <video id="mainVideoPlayer" class="video-js vjs-default-skin vjs-big-play-centered w-full aspect-video rounded-2xl overflow-hidden" controls preload="auto"></video>
+                    </div>
+                    <h1 id="playerTitle" class="text-2xl font-bold tracking-tight text-zinc-100 px-1">Video Analysis Engine</h1>
+                </div>
+                
+                <div class="bg-zinc-900/40 rounded-2xl p-5 border border-zinc-900 flex flex-col h-[460px] backdrop-blur-md">
+                    <div class="mb-4">
+                        <h3 class="font-bold text-xs text-zinc-400 tracking-widest uppercase mb-3">Deep Timeline Vector Finder</h3>
+                        <div class="flex bg-zinc-950/80 border border-zinc-800 rounded-xl overflow-hidden focus-within:border-pink-500/50 transition">
+                            <input type="text" id="insideSearchInput" placeholder="Find precise visual moment..." class="w-full bg-transparent px-4 py-2.5 text-xs text-zinc-200 outline-none placeholder-zinc-600">
+                            <button id="insideSearchButton" onclick="executeInsideVideoSearch()" class="bg-zinc-800 hover:bg-zinc-700 px-4 text-xs font-bold text-zinc-300 transition tracking-wide">Find</button>
+                        </div>
+                    </div>
+
+                    <div id="timelineMatches" class="space-y-2.5 overflow-y-auto flex-1 pr-1 custom-scrollbar">
+                        <p class="text-xs text-zinc-500 text-center py-12 px-4 leading-relaxed">Type an explicit object or concept above to scan frame coordinates inside this clip.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="feedSection" class="space-y-6">
+            <h2 id="feedHeading" class="text-xl font-extrabold tracking-tight flex items-center space-x-2 text-zinc-200">
+                <span>Recommended Framework Feeds</span>
+            </h2>
+            <div id="videoGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/video.js@8.10.0/dist/video.min.js"></script>
+    <script>
+    const API_BASE = "https://kishanamaliya-database.hf.space/api/v1/videos";;
+    let player = null;
+    let currentVideo = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadHomepageFeed();
+
+        // Keyboard search listeners
+        document.getElementById('globalSearchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeGlobalPlatformSearch();
+            }
+        });
+
+        document.getElementById('insideSearchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeInsideVideoSearch();
+            }
+        });
+    });
+
+    function toggleUploadStudio() {
+        const studio = document.getElementById('studioSection');
+        studio.classList.toggle('hidden');
+    }
+
+    async function loadHomepageFeed() {
+        document.getElementById('theaterSection').classList.add('hidden');
+        document.getElementById('feedHeading').innerText = "Recommended Videos";
+        currentVideo = null;
+        if (player) player.pause();
+        
+        try {
+            const res = await fetch(`${API_BASE}/`);
+            if (!res.ok) return;
+            const data = await res.json();
+            renderVideoGrid(data);
+        } catch (err) {
+            console.error("Feed extraction failure:", err);
+        }
+    }
+
+    function renderVideoGrid(videos) {
+        const grid = document.getElementById('videoGrid');
+        grid.innerHTML = "";
+        
+        if (videos.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full border border-dashed border-zinc-800 rounded-2xl py-16 text-center text-sm text-zinc-500">
+                    No matching items discovered inside active cache indexes.
+                </div>`;
+            return;
+        }
+
+        videos.forEach(vid => {
+            const card = document.createElement('div');
+            card.className = "bg-zinc-900/40 rounded-2xl overflow-hidden border border-zinc-900 hover:border-zinc-800/80 transition duration-300 cursor-pointer group shadow-lg hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.5)] flex flex-col relative";
+            card.onclick = () => launchVideoTheater(vid, []);
+            
+            card.innerHTML = `
+                <div class="aspect-video bg-zinc-950 w-full relative overflow-hidden">
+                    <button onclick="event.stopPropagation(); executeVideoPurge('${vid.id}')" 
+                            class="absolute top-3 right-3 z-30 bg-black/60 hover:bg-red-600/90 border border-zinc-800 hover:border-red-500 text-zinc-400 hover:text-white w-8 h-8 rounded-xl flex items-center justify-center transition duration-200 opacity-0 group-hover:opacity-100 shadow-md backdrop-blur-md"
+                            title="Purge Video Assets">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition z-10"></div>
+                    <div class="absolute inset-0 flex items-center justify-center z-20">
+                        <div class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 group-hover:scale-110 transition duration-300">
+                            <span class="text-xl ml-1">▶</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5 flex-1 flex flex-col justify-between space-y-2">
+                    <div>
+                        <h4 class="font-bold text-zinc-100 group-hover:text-purple-400 transition duration-200 line-clamp-2 leading-snug tracking-tight text-base">${vid.title || 'Untitled Video'}</h4>
+                        <p class="text-xs text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed font-normal">${vid.description || 'No description payload configured.'}</p>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Natively handles the Multipart Binary Streaming Data ingestion Form
+    async function executeVideoUpload(event) {
+        event.preventDefault();
+        
+        const fileInput = document.getElementById('uploadFile');
+        const titleInput = document.getElementById('uploadTitle');
+        const descInput = document.getElementById('uploadDescription');
+        const tagsInput = document.getElementById('uploadTags');
+        const submitBtn = document.getElementById('uploadSubmitButton');
+        
+        if (!fileInput.files[0]) return;
+        
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("title", titleInput.value.trim());
+        formData.append("description", descInput.value.trim());
+        formData.append("tags", tagsInput.value.trim());
+        
+        submitBtn.innerText = "Processing Neural Video Extraction (Running Celery Frame Pipeline)...";
+        submitBtn.disabled = true;
+        
+        try {
+            const res = await fetch(`${API_BASE}/upload`, {
+                method: "POST",
+                body: formData
+            });
+            
+            if (!res.ok) throw new Error("Backend reject pipeline format parameters.");
+            
+            alert("Video successfully queued! The automated background task is now generating SigLIP 2 frame vectors. Refresh the home library in a few seconds.");
+            document.getElementById('uploadForm').reset();
+            toggleUploadStudio();
+            loadHomepageFeed();
+            
+        } catch (err) {
+            console.error("Ingestion fault:", err);
+            alert("Processing failed. Verify server storage disk nodes and connection protocols.");
+        } finally {
+            submitBtn.innerText = "Deploy to Processing Cluster";
+            submitBtn.disabled = false;
+        }
+    }
+
+    // Connects seamlessly to the Cascading Erasure DELETE Endpoint
+    async function executeVideoPurge(videoId) {
+        if (!confirm("Are you absolute sure you want to permanently delete this video, erase its static transcoded disk assets, and clear its high-dimensional Qdrant records?")) {
+            return;
+        }
+        
+        try {
+            const res = await fetch(`${API_BASE}/${videoId}`, {
+                method: "DELETE"
+            });
+            
+            if (!res.ok) throw new Error("Delete requested aborted by database logic.");
+            
+            alert("Video collection vectors and data successfully deleted from server.");
+            loadHomepageFeed(); // Instantly refresh layout feed matrix
+            
+        } catch (err) {
+            console.error("Deletion fault:", err);
+            alert("Failed to wipe video assets cleanly from disk coordinates.");
+        }
+    }
+
+    function launchVideoTheater(video, matches) {
+        currentVideo = video; 
+        document.getElementById('theaterSection').classList.remove('hidden');
+        document.getElementById('playerTitle').innerText = video.title;
+        document.getElementById('insideSearchInput').value = ""; 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        setTimeout(() => {
+            if (!player) {
+                player = videojs('mainVideoPlayer', {
+                    controls: true,
+                    autoplay: true,
+                    preload: 'auto',
+                    fluid: true,
+                    responsive: true
+                });
+            }
+
+            player.src({
+                src: `http://127.0.0.1:8000${video.hls_playlist_url}`,
+                type: 'application/x-mpegURL'
+            });
+
+            player.load();
+            player.play().catch(err => console.log("Awaiting activation interaction flag.", err));
+        }, 50);
+
+        renderSidebarMatches(matches);
+    }
+
+    function renderSidebarMatches(matches) {
+        const sidebar = document.getElementById('timelineMatches');
+        sidebar.innerHTML = "";
+
+        if (!matches || matches.length === 0) {
+            sidebar.innerHTML = `
+                <div class="py-12 px-4 text-center">
+                    <p class="text-xs text-zinc-500 leading-relaxed">Regular streaming track. Use the search field above to cross-reference visual moments in real-time.</p>
+                </div>`;
+            return;
+        }
+
+        matches.forEach(match => {
+            const btn = document.createElement('div');
+            btn.className = "bg-zinc-950/60 hover:bg-zinc-900 p-3.5 rounded-xl border border-zinc-900/60 flex items-center justify-between cursor-pointer transition duration-200 group active:scale-[0.98]";
+            btn.onclick = () => player.currentTime(match.timestamp);
+            
+            btn.innerHTML = `
+                <div class="flex flex-col space-y-0.5">
+                    <span class="text-xs font-bold text-purple-400 group-hover:text-pink-400 transition group-hover:underline">Moment @ ${formatTime(match.timestamp)}</span>
+                    <span class="text-[10px] text-zinc-500 font-medium">Metric Score: ${(match.score * 100).toFixed(1)}%</span>
+                </div>
+                <div class="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 group-hover:border-purple-500/40 flex items-center justify-center transition">
+                    <span class="text-zinc-500 group-hover:text-purple-400 text-xs transform translate-x-[1px] transition">➔</span>
+                </div>
+            `;
+            sidebar.appendChild(btn);
+        });
+    }
+
+    async function executeGlobalPlatformSearch() {
+        const query = document.getElementById('globalSearchInput').value.trim();
+        if (!query) return;
+
+        const btn = document.getElementById('globalSearchButton');
+        btn.innerText = "Searching...";
+        document.getElementById('feedHeading').innerText = `Search Engine Matches: "${query}"`;
+        
+        try {
+            const res = await fetch(`${API_BASE}/global-search?query=${encodeURIComponent(query)}&top_k=20`);
+            const data = await res.json();
+            renderVideoGrid(data);
+        } catch (err) {
+            console.error("Global core query failure:", err);
+        } finally {
+            btn.innerText = "Search Feed";
+        }
+    }
+
+    async function executeInsideVideoSearch() {
+        if (!currentVideo) return;
+        const query = document.getElementById('insideSearchInput').value.trim();
+        if (!query) return;
+
+        const btn = document.getElementById('insideSearchButton');
+        btn.innerText = "...";
+        
+        try {
+            const res = await fetch(`${API_BASE}/search?query=${encodeURIComponent(query)}&top_k=20`);
+            const data = await res.json();
+            
+            const activeVideoMatches = data.results
+                .filter(hit => hit.video_id === currentVideo.id)
+                .map(hit => ({
+                    timestamp: hit.timestamp_seconds,
+                    score: hit.score
+                }))
+                .sort((a, b) => a.timestamp - b.timestamp);
+
+            renderSidebarMatches(activeVideoMatches);
+        } catch (err) {
+            console.error("Timeline vector resolution fault:", err);
+        } finally {
+            btn.innerText = "Find";
+        }
+    }
+
+    function formatTime(secs) {
+        const m = Math.floor(secs / 60);
+        const s = Math.floor(secs % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+</script>
+</body>
+</html>
