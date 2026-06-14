@@ -1,11 +1,32 @@
 version: '3.8'
 
 services:
+  app:
+    build: .
+    container_name: youtube_clone_app
+    ports:
+      - "7860:7860"
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - shared_storage:/app/shared_storage
+    restart: unless-stopped
+    env_file:
+      - .env
+
   redis:
     image: redis:7-alpine
     container_name: youtube_clone_redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -15,6 +36,12 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
 
 volumes:
   qdrant_storage:
+  shared_storage:
