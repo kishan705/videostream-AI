@@ -1,9 +1,13 @@
 import os
+import json
+import redis
 from workers.celery_app import celery_app
 from workers.ml_pipeline import Siglip2EmbeddingPipeline
 from app.LLD.ffmpeg_strategy import LocalFFmpegStrategy
 from app.LLD.qdrant_strategy import QdrantVectorStoreStrategy
 from app.core.config import settings
+
+redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 # Global placeholders for safe, lazy runtime evaluation
 ffmpeg_strategy = None
@@ -45,7 +49,8 @@ def process_video_pipeline(video_id: str, raw_file_path: str) -> bool:
         print(f"[WORKER] Transcoding complete: {playlist_path}")
         
         # Step 2: Keyframe extraction
-        frames_metadata = ffmpeg_engine.extract_keyframes(raw_file_path, output_dir, interval_seconds=1)
+        interval = int(os.getenv("FRAME_INTERVAL_SECONDS", 5))
+        frames_metadata = ffmpeg_engine.extract_keyframes(raw_file_path, output_dir, interval_seconds=interval)
         print(f"[WORKER] Extracted {len(frames_metadata)} frames.")
         
         if not frames_metadata:
@@ -62,14 +67,35 @@ def process_video_pipeline(video_id: str, raw_file_path: str) -> bool:
             all_computed_vectors.extend(chunk_vectors)
             
         # Step 4: Sync to Qdrant Space
-        return db_vector_store.upsert_embeddings(
+        success = db_vector_store.upsert_embeddings(
             video_id=video_id,
             embeddings=all_computed_vectors,
             metadata=frames_metadata
         )
+        
+        if success:
+            try:
+                meta_str = redis_client.get(f"video:metadata:{video_id}")
+                if meta_str:
+                    meta = json.loads(meta_str)
+                    meta["status"] = "ready"
+                    redis_client.set(f"video:metadata:{video_id}", json.dumps(meta))
+            except Exception as re_err:
+                print(f"[REDIS UPDATE ERROR] {str(re_err)}")
+                
+        return success
             
     except Exception as e:
         print(f"[WORKER CRITICAL SHUTDOWN] Ingestion routine dropped: {str(e)}")
+        try:
+            meta_str = redis_client.get(f"video:metadata:{video_id}")
+            if meta_str:
+                meta = json.loads(meta_str)
+                meta["status"] = "failed"
+                meta["error"] = str(e)
+                redis_client.set(f"video:metadata:{video_id}", json.dumps(meta))
+        except Exception as re_err:
+            pass
         return False
 
 
