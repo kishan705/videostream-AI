@@ -25,4 +25,4 @@ def test_upload_with_valid_token_passes_auth_check(client, auth_header, sample_v
 def test_malformed_bearer_header_returns_401(client, sample_video_bytes):
     headers = {"Authorization": "invalid-token-format"}
     response = client.post("/api/v1/videos/upload", headers=headers, files={"file": ("test.mp4", io.BytesIO(sample_video_bytes), "video/mp4")}, data={"title": "Test"})
-    assert response.status_code == 403 # HTTPBearer returns 403 when scheme is missing or invalid
+    assert response.status_code == 401

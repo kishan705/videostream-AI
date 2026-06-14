@@ -10,6 +10,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Dep
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Dict, Any
 from qdrant_client.http import exceptions as qdrant_exceptions
+from qdrant_client import models as qdrant_models
 from app.core.config import settings
 from app.LLD.qdrant_strategy import QdrantVectorStoreStrategy
 
@@ -245,11 +246,11 @@ async def delete_video(video_id: str, vector_store: QdrantVectorStoreStrategy = 
     try:
         vector_store.client.delete(
             collection_name=vector_store.collection_name,
-            points_selector=vector_store.client.models.Filter(
+            points_selector=qdrant_models.Filter(
                 must=[
-                    vector_store.client.models.FieldCondition(
+                    qdrant_models.FieldCondition(
                         key="video_id",
-                        match=vector_store.client.models.MatchValue(value=video_id)
+                        match=qdrant_models.MatchValue(value=video_id)
                     )
                 ]
             )

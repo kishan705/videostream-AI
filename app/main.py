@@ -34,6 +34,7 @@ app.add_middleware(
 )
 
 # Serve only the processed videos folder to prevent raw file exposure
+os.makedirs("shared_storage/processed", exist_ok=True)
 app.mount("/shared_storage/processed", StaticFiles(directory="shared_storage/processed"), name="shared_storage_processed")
 
 

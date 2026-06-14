@@ -1,6 +1,8 @@
 import pytest
 import os
-from unittest.mock import MagicMock, patch
+import json
+import contextlib
+from unittest.mock import MagicMock, patch, AsyncMock
 import fakeredis
 from fastapi.testclient import TestClient
 
@@ -39,17 +41,34 @@ def fake_redis(mock_io):
     return mock_io["redis"]
 
 @pytest.fixture
-def mock_qdrant(mock_io):
-    return mock_io["qdrant"]
-
-@pytest.fixture
 def mock_celery(mock_io):
     return mock_io["celery"]
 
+@pytest.fixture(autouse=True)
+def mock_qdrant_strategy_methods():
+    with patch("app.LLD.qdrant_strategy.QdrantClient"), \
+         patch("app.LLD.qdrant_strategy.QdrantVectorStoreStrategy.search_similarity") as mock_search:
+        mock_search.return_value = []
+        yield
+
 @pytest.fixture
-def client():
+def mock_qdrant():
+    from app.LLD.interfaces import VectorStoreInterface
+    mock = MagicMock()
+    mock.client = MagicMock()
+    mock.collection_name = "test_collection"
+    mock.search_similarity = AsyncMock(return_value=[])
+    mock.delete_video_vectors = AsyncMock(return_value=True)
+    return mock
+
+@pytest.fixture
+def client(mock_qdrant):
     from app.main import app
-    return TestClient(app)
+    from app.api.v1.videos import get_vector_store
+    app.dependency_overrides[get_vector_store] = lambda: mock_qdrant
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
 
 @pytest.fixture
 def sample_video_bytes():

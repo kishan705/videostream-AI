@@ -25,14 +25,15 @@ def test_embedding_output_shape_is_correct():
         
         pipeline = Siglip2EmbeddingPipeline()
         
-        mock_tensor = MagicMock()
-        mock_tensor.norm.return_value = 1.0
-        mock_tensor.__truediv__.return_value = mock_tensor
-        mock_tensor.squeeze.return_value = mock_tensor
-        mock_tensor.cpu.return_value = mock_tensor
-        mock_tensor.tolist.return_value = [0.1] * 1152
+        mock_outputs = MagicMock()
+        mock_features = MagicMock()
+        mock_outputs.pooler_output = mock_features
+        mock_features.norm.return_value = 1.0
+        mock_divided = MagicMock()
+        mock_features.__truediv__.return_value = mock_divided
+        mock_divided.squeeze.return_value.cpu.return_value.tolist.return_value = [0.1] * 1152
         
-        pipeline.model.get_text_features.return_value = mock_tensor
+        pipeline.model.get_text_features.return_value = mock_outputs
         res = pipeline.get_text_embedding("test")
         assert len(res) == 1152
 

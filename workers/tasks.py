@@ -82,8 +82,9 @@ def process_video_pipeline(video_id: str, raw_file_path: str) -> bool:
                     redis_client.set(f"video:metadata:{video_id}", json.dumps(meta))
             except Exception as re_err:
                 print(f"[REDIS UPDATE ERROR] {str(re_err)}")
-                
-        return success
+            return True
+        else:
+            raise RuntimeError("Vector DB embedding insertion failed.")
             
     except Exception as e:
         print(f"[WORKER CRITICAL SHUTDOWN] Ingestion routine dropped: {str(e)}")
