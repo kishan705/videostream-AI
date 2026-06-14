@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+fakeredis[aioredis]
+pytest-mock
+factory-boy

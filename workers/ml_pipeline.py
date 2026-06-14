@@ -44,7 +44,8 @@ class Siglip2EmbeddingPipeline:
         images = []
         for path in image_paths:
             try:
-                images.append(Image.open(path).convert("RGB"))
+                with Image.open(path) as img:
+                    images.append(img.convert("RGB").copy())
             except Exception as e:
                 print(f"[AI ENGINE] Error reading frame asset {path}: {str(e)}")
                 
