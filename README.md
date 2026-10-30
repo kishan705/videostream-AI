@@ -2,7 +2,7 @@
 
 A full-stack, AI-powered video streaming and search platform. This system ingests raw video files, transcodes them into HLS (HTTP Live Streaming) format for seamless playback, and utilizes Google's state-of-the-art **SigLIP 2** vision-language model to enable deep semantic frame-by-frame video search.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-REST_API-009688.svg?logo=fastapi&logoColor=white)
@@ -15,7 +15,7 @@ A full-stack, AI-powered video streaming and search platform. This system ingest
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-Video_Processing-007808.svg?logo=ffmpeg&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Infrastructure-2496ED.svg?logo=docker&logoColor=white)
 
-## ✨ Core Features
+## Core Features
 
 *   **Multimodal AI Search:** Query specific moments inside videos using natural language. The system maps text queries to video frames using the `google/siglip2-so400m-patch16-256` model (1152-D vector space).
 *   **Adaptive HLS Streaming:** Automatically transcodes `.mp4`, `.mkv`, and `.avi` uploads into segmented HLS (`.m3u8`) playlists for optimized, buffer-free web playback.
@@ -23,7 +23,7 @@ A full-stack, AI-powered video streaming and search platform. This system ingest
 *   **Hardware Acceleration:** The ML pipeline dynamically scales to use CUDA (Nvidia GPUs), MPS (Apple Silicon), or standard CPU architectures.
 *   **Persistent Cloud Metadata:** Video metadata is reliably stored and indexed using a Redis cloud database layer.
 
-## 🧠 System Architecture
+## System Architecture
 
 1.  **Ingestion:** User uploads a video via FastAPI. Raw file is saved, and a metadata record is created in Redis.
 2.  **Orchestration:** FastAPI triggers a Celery task and immediately returns a 202 Accepted response.
@@ -33,7 +33,7 @@ A full-stack, AI-powered video streaming and search platform. This system ingest
     *   **Vector DB:** Upserts the 1152-D frame embeddings and timestamp metadata into Qdrant.
 4.  **Retrieval:** Users send text queries. The ML pipeline embeds the text, and Qdrant performs an Approximate Nearest Neighbor (ANN) search to return the exact video and timestamp.
 
-## 🛠️ Installation & Setup
+##  Installation & Setup
 
 ### Prerequisites
 *   Python 3.10+
@@ -68,7 +68,7 @@ uvicorn app.main:app --reload --port 8000
 celery -A workers.celery_app worker --loglevel=info
 ```
 
-## 📡 API Endpoints Summary
+## API Endpoints Summary
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -78,7 +78,7 @@ celery -A workers.celery_app worker --loglevel=info
 | `GET` | `/api/v1/videos/global-search` | Hybrid search (Text Metadata + Neural Scene Matching). |
 | `DELETE` | `/api/v1/videos/{video_id}` | Cascading deletion of vectors, metadata, and physical files. |
 
-## ⚙️ Configuration
+## Configuration
 Environment variables can be managed via a `.env` file (parsed by `pydantic-settings`). Key variables include:
 *   `REDIS_URL`: Connection string for Redis.
 *   `QDRANT_HOST` / `QDRANT_PORT`: Connection details for Qdrant.
